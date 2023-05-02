@@ -1,0 +1,46 @@
+---
+title: "Assignment 5"
+author: "Mia Guarnieri"
+date: "2023-05-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(sensitivity)
+library(tidyverse)
+library(lhs)
+library(purrr)
+library(here)
+```
+
+Source the function
+```{r}
+source(here("R", "Catm.r"))
+```
+
+# Create the random sample using lhs
+```{r}
+# set the seed so it is random
+set.seed(1)
+
+# designate parameters
+pnames = c("height", "k_d", "k_o", "v")
+
+# how many parameters
+npar =  length(pnames)
+
+# how many samples
+nsample = 100
+
+# generate sampes using lhs function
+parm_quant = randomLHS(nsample, npar)
+
+# rename columns to match variables
+colnames(parm_quant) = pnames 
+
+
+
+```
+
