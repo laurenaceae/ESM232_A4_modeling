@@ -2,7 +2,9 @@
 title: "Assignment 5"
 author: "Mia Guarnieri"
 date: "2023-05-02"
-output: html_document
+output: 
+  html_document:
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
@@ -16,12 +18,12 @@ library(here)
 library(kableExtra)
 ```
 
-Source the function
+## Source the function
 ```{r}
 source(here("R", "Catm.r"))
 ```
 
-# Create the random sample using lhs
+## Create the random sample using lhs
 ```{r}
 # set the seed so it is random
 set.seed(1)
@@ -52,7 +54,7 @@ parm[,"k_d"] = qnorm(parm_quant[,"k_d"], mean = 0.7, sd = 0.01)
 parm[,"k_o"] = qnorm(parm_quant[,"k_o"], mean = 0.1, sd = 0.01)
 ```
 
-# Run model for parameter sets
+## Run model for parameter sets
 
 ```{r}
 # run the model
@@ -63,7 +65,7 @@ condsd <- as.data.frame(unlist(cond))
 colnames(condsd) = "ca"
 ```
 
-# Plot
+## Plot
 
 ```{r}
 # add uncertainty bounds on our estimates
@@ -89,10 +91,14 @@ tmp2 = tmp %>% gather(-ca, key="parm", value="parmvalue")
 
 ggplot(tmp2, aes(parmvalue, ca)) +
   geom_point() +
-  facet_wrap(~ parm, scales="free", ncol=5)
+  facet_wrap(~ parm, scales="free", ncol = 4) +
+  scale_x_continuous(n.breaks = 4) +
+  labs(x = "Parameter",
+       y = "Conductance (mm/s)",
+       title = "Parameter Sensitivity")
 ```
 
-# Quantify sensitivity - pcc
+## Quantify sensitivity - pcc
 
 ```{r}
 
@@ -103,7 +109,7 @@ plot(senresult_rank)
 
 # extract prcc values from pcc object
 
-parm_prcc <- as.data.frame(senresult$PCC)
+parm_prcc <- as.data.frame(senresult_rank$PRCC)
 
 rownames(parm_prcc) = c("Height", "Zero Plane Displacement (k_d)", "Roughness (k_o)", "Windspeed (v)")
 
@@ -115,34 +121,8 @@ parm_prcc_table <- parm_prcc %>%
 
 parm_prcc_table
 
-# what parameters is the result most sensitive to, 
-# does this match your scatter plot
-
-# try for other outputs
-
-
-# plot parameter sensitivity
-# a bit tricky but nice way to make it easy to plot all parameters against all values
-tmp = cbind.data.frame(yieldsd, parm)
-tmp2 = tmp %>% gather(maxyield, minyield, meanyield, value="yvalue",key="yieldtype")
-tmp3 = tmp2 %>% gather(-yvalue, -yieldtype, key="parm", value="parmvalue")
-ggplot(tmp3, aes(parmvalue, yvalue, col=yieldtype))+geom_point()+facet_wrap(~yieldtype*parm, scales="free", ncol=5)
 ```
 
-# Discussion
+## Discussion
 
-Higher conductance = more evaporation = more water use
-
-more accurate wind speed measurements will be important for reducing uncertainty (high pccr)
-
-more climate change could mean higher wind speeds, more conductance
-
-Discuss what your results tell you about how aerodynamic conductance? What does it suggest about
-what you should focus on if you want to reduce uncertainty in aerodymaic conductance estimates?
-Does this tell you anything about the sensitivity of plant water use to climate change?
-
-
-suggestion for how to reduce uncertainty that follows from your analysis (5pts)
-
-
-* idea about how uncertainty might impact estimate of plant water use under climate change (5pts)
+Wind velocity has the highest correlation with atmospheric conductance. To reduce uncertainty in atmospheric conductance estimates, getting more accurate and precise wind speeds should be the highest priority. The height of the vegetation and roughness of terrain also contribute to atmospheric conductance, but have lower correlation coefficients than wind velocity, and improving the accuracy of these measurements could help as well. The zero plane displacement had the lowest correlation with atmospheric conductance. A higher conductance rate results in more evaporation and higher water use needs. As climate change gets worse, it is possible that higher wind speeds will become more frequent and will lead to higher atmospheric conductance, since conductance is most sensitive to changes in wind velocity. More variable weather events will likely lead to more variable conductance, resulting in less certainty in conductance estimates and water use needs.
