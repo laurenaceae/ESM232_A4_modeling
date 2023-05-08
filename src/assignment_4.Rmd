@@ -13,6 +13,7 @@ library(tidyverse)
 library(lhs)
 library(purrr)
 library(here)
+library(kableExtra)
 ```
 
 Source the function
@@ -34,13 +35,114 @@ npar =  length(pnames)
 # how many samples
 nsample = 100
 
-# generate sampes using lhs function
+# generate samples using lhs function
 parm_quant = randomLHS(nsample, npar)
 
 # rename columns to match variables
 colnames(parm_quant) = pnames 
 
+# creating parameter dataframe
+parm = as.data.frame(matrix(nrow=nrow(parm_quant), ncol=ncol(parm_quant)))
+colnames(parm) = pnames
 
-
+# generating sample distributions for our parameters
+parm[,"height"] = qunif(parm_quant[,"height"], min = 9.5, max = 10.5)
+parm[,"v"] = qnorm(parm_quant[,"v"], mean = 250, sd = 30)
+parm[,"k_d"] = qnorm(parm_quant[,"k_d"], mean = 0.7, sd = 0.01)
+parm[,"k_o"] = qnorm(parm_quant[,"k_o"], mean = 0.1, sd = 0.01)
 ```
 
+# Run model for parameter sets
+
+```{r}
+# run the model
+cond = parm %>% pmap(Catm)
+
+# turn results in to a dataframe for easy display/analysis
+condsd <- as.data.frame(unlist(cond))
+colnames(condsd) = "ca"
+```
+
+# Plot
+
+```{r}
+# add uncertainty bounds on our estimates
+ggplot(condsd) +
+  geom_boxplot(aes(y = ca)) +
+  labs(y="Conductance (mm/s)",
+       title = "Conductance Uncertainty") +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+# cumulative distribution
+ggplot(condsd, aes(y = ca)) +
+  stat_ecdf() +
+  labs(y = "Conductance (mm/s)",
+       x = "Empirical Cumulative Distribution Function",
+       title = "Cumulative Conductance Distribution")
+
+
+# plot parameter sensitivity
+tmp = cbind.data.frame(condsd, parm)
+
+tmp2 = tmp %>% gather(-ca, key="parm", value="parmvalue")
+
+ggplot(tmp2, aes(parmvalue, ca)) +
+  geom_point() +
+  facet_wrap(~ parm, scales="free", ncol=5)
+```
+
+# Quantify sensitivity - pcc
+
+```{r}
+
+# calculate and plot partial rank correlation coefficients
+senresult_rank = pcc(parm, condsd$ca, rank=TRUE )
+senresult_rank
+plot(senresult_rank)
+
+# extract prcc values from pcc object
+
+parm_prcc <- as.data.frame(senresult$PCC)
+
+rownames(parm_prcc) = c("Height", "Zero Plane Displacement (k_d)", "Roughness (k_o)", "Windspeed (v)")
+
+parm_prcc_table <- parm_prcc %>%
+  kable(digits = 3,
+        col.names = "Partial Rank Correlation Coefficient") %>% 
+  kable_styling(full_width = FALSE) %>% 
+  kable_paper()
+
+parm_prcc_table
+
+# what parameters is the result most sensitive to, 
+# does this match your scatter plot
+
+# try for other outputs
+
+
+# plot parameter sensitivity
+# a bit tricky but nice way to make it easy to plot all parameters against all values
+tmp = cbind.data.frame(yieldsd, parm)
+tmp2 = tmp %>% gather(maxyield, minyield, meanyield, value="yvalue",key="yieldtype")
+tmp3 = tmp2 %>% gather(-yvalue, -yieldtype, key="parm", value="parmvalue")
+ggplot(tmp3, aes(parmvalue, yvalue, col=yieldtype))+geom_point()+facet_wrap(~yieldtype*parm, scales="free", ncol=5)
+```
+
+# Discussion
+
+Higher conductance = more evaporation = more water use
+
+more accurate wind speed measurements will be important for reducing uncertainty (high pccr)
+
+more climate change could mean higher wind speeds, more conductance
+
+Discuss what your results tell you about how aerodynamic conductance? What does it suggest about
+what you should focus on if you want to reduce uncertainty in aerodymaic conductance estimates?
+Does this tell you anything about the sensitivity of plant water use to climate change?
+
+
+suggestion for how to reduce uncertainty that follows from your analysis (5pts)
+
+
+* idea about how uncertainty might impact estimate of plant water use under climate change (5pts)
