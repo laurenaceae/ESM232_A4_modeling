@@ -8,24 +8,17 @@ output:
     code_folding: hide
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
 
-library(sensitivity)
-library(tidyverse)
-library(lhs)
-library(purrr)
-library(here)
-library(kableExtra)
-```
 
 ## Source the function
-```{r}
+
+```r
 source(here("R", "Catm.r"))
 ```
 
 ## Create the random sample using lhs
-```{r}
+
+```r
 # set the seed so it is random
 set.seed(1)
 
@@ -57,7 +50,8 @@ parm[,"k_o"] = qnorm(parm_quant[,"k_o"], mean = 0.1, sd = 0.01)
 
 ## Run model for parameter sets
 
-```{r}
+
+```r
 # run the model
 cond = parm %>% pmap(Catm)
 
@@ -68,7 +62,8 @@ colnames(condsd) = "ca"
 
 ## Plot
 
-```{r}
+
+```r
 # add uncertainty bounds on our estimates
 ggplot(condsd) +
   geom_boxplot(aes(y = ca)) +
@@ -76,15 +71,22 @@ ggplot(condsd) +
        title = "Conductance Uncertainty") +
   theme(axis.text.x = element_blank(),
         axis.ticks.x = element_blank())
+```
 
+![](assignment_4_files/figure-latex/unnamed-chunk-4-1.pdf)<!-- --> 
+
+```r
 # cumulative distribution
 ggplot(condsd, aes(y = ca)) +
   stat_ecdf() +
   labs(y = "Conductance (mm/s)",
        x = "Empirical Cumulative Distribution Function",
        title = "Cumulative Conductance Distribution")
+```
 
+![](assignment_4_files/figure-latex/unnamed-chunk-4-2.pdf)<!-- --> 
 
+```r
 # plot parameter sensitivity
 tmp = cbind.data.frame(condsd, parm)
 
@@ -99,15 +101,21 @@ ggplot(tmp2, aes(parmvalue, ca)) +
        title = "Parameter Sensitivity")
 ```
 
+![](assignment_4_files/figure-latex/unnamed-chunk-4-3.pdf)<!-- --> 
+
 ## Quantify sensitivity - pcc
 
-```{r}
 
+```r
 # calculate and plot partial rank correlation coefficients
 senresult_rank = pcc(parm, condsd$ca, rank=TRUE )
 
 plot(senresult_rank)
+```
 
+![](assignment_4_files/figure-latex/unnamed-chunk-5-1.pdf)<!-- --> 
+
+```r
 # extract prcc values from pcc object
 
 parm_prcc <- as.data.frame(senresult_rank$PRCC)
@@ -121,8 +129,24 @@ parm_prcc_table <- parm_prcc %>%
   kable_paper()
 
 parm_prcc_table
-
 ```
+
+\begin{table}
+\centering
+\begin{tabular}{l|r}
+\hline
+  & Partial Rank Correlation Coefficient\\
+\hline
+Height & 0.429\\
+\hline
+Zero Plane Displacement (k\_d) & -0.100\\
+\hline
+Roughness (k\_o) & 0.867\\
+\hline
+Windspeed (v) & 0.988\\
+\hline
+\end{tabular}
+\end{table}
 
 ## Discussion
 
